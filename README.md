@@ -10,7 +10,10 @@ no gaps.
 
 A tribute to **Alan Turing** built for the **June Solstice Game Jam 2026**.
 
-![Alan's Garden](prototype/Art/garden-bg.png)
+![Alan's Garden — the bed bloomed into the target, leaving a clean gap around the seed](docs/bloomed.png)
+
+*Level 5 solved: plant B floods the whole bed but keeps a plus-shaped gap around
+the static seed A — a discrete Turing pattern, grown from one rule.*
 
 ## The Turing tribute
 
@@ -52,6 +55,33 @@ swift run GardenApp        # graphical version (SpriteKit)
 ```
 
 > Launch from a real **Terminal.app** or Xcode so the window can appear.
+
+### Talk to your flowers (Google AI)
+
+The game's tagline — *if flowers could think, how would they talk?* — is also a
+feature. Above the board there's a text box: type a plain-English wish like
+*"flood the bed with B but keep a gap around A"* and the **Gemini API** translates
+it into the game's growth-rule grammar (directions / avoid / need / cluster),
+then lights up the matching toggles. The deterministic engine still decides
+win/lose, so Gemini only *proposes* rules — it can never corrupt a puzzle.
+
+![Talk to your flowers — Gemini turned the sentence into "B spreads everywhere, avoid A"](docs/talk-to-your-flowers.png)
+
+*Type a wish, press **Ask Gemini**, and the rule toggles light up — here Gemini set
+plant B to spread in every direction while avoiding plant A. Press Sunrise to grow
+it (see the result at the top of this page).*
+
+It's optional. To enable it, get a free key from
+[Google AI Studio](https://aistudio.google.com/apikey) and export it before
+launching:
+
+```bash
+export GEMINI_API_KEY="your-key"
+./run-gui.sh               # bundles the app and passes the key through
+```
+
+Without a key the box just reports it's unavailable and the rest of the game
+plays exactly the same.
 
 Command-line (frame-by-frame ASCII) version and rule sandbox:
 
@@ -98,9 +128,12 @@ See [`prototype/README.md`](prototype/README.md) for developer notes.
 
 ## Demo
 
-The submission video shows two real solves — Level 5 (inhibition) and Level 9
-(clustering) — driven automatically by [`prototype/tools/demo.lua`](prototype/tools/demo.lua),
-with timed subtitles. (Recorded with macOS screen capture; music added in post.)
+▶️ **Watch the trailer:** https://www.youtube.com/watch?v=UFVIpS9ipvY
+
+The video shows two real solves — Level 5, solved by *talking to the flowers*
+(Gemini turns a plain sentence into the rule), and Level 9 (clustering) — driven
+automatically by [`prototype/tools/demo.lua`](prototype/tools/demo.lua), with
+timed subtitles. (Recorded with macOS screen capture; music added in post.)
 
 ## Credits
 
