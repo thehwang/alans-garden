@@ -21,6 +21,17 @@ cp .build/debug/GardenApp "$APP/Contents/MacOS/GardenApp"
 pkill -x GardenApp 2>/dev/null || true
 sleep 0.5
 
+# Optional "Talk to your flowers" (Gemini) feature: an app launched via `open`
+# does NOT inherit this shell's environment, so push the key into the user's
+# launchd domain — LaunchServices-started apps inherit that. No key? The game
+# still runs fine; the natural-language box just reports it's unavailable.
+if [ -n "$GEMINI_API_KEY" ]; then
+  launchctl setenv GEMINI_API_KEY "$GEMINI_API_KEY"
+  echo "GEMINI_API_KEY detected — 'Talk to your flowers' enabled."
+else
+  echo "No GEMINI_API_KEY — 'Talk to your flowers' disabled (game still works)."
+fi
+
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

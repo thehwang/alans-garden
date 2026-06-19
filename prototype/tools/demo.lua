@@ -17,6 +17,8 @@
 --       ↑(736,488) ↓(736,412) ←(698,450) →(774,450)
 --       need(846,470)  avoid(846,442)  cluster(846,414)
 --       Sunrise button center (816,219)
+--   * "Talk to your flowers" bar (Gemini): input field center (366,601),
+--       "Ask Gemini" button center (580,601)
 
 local APP = "GardenApp"
 local SCENE_H = 680
@@ -27,6 +29,7 @@ local B = {
   up = {736, 488}, down = {736, 412}, left = {698, 450}, right = {774, 450},
   need = {846, 470}, avoid = {846, 442}, cluster = {846, 414},
   sunrise = {816, 219},
+  nlField = {366, 601}, ask = {580, 601},   -- Gemini natural-language input
 }
 
 -- ---- helpers ---------------------------------------------------------------
@@ -72,6 +75,9 @@ local function click(btn)
 end
 
 local function key(k) focus(); hs.eventtap.keyStroke({}, k, 0) end
+
+-- Type a string into whatever field is focused (used for the Gemini input).
+local function typeText(s) focus(); hs.eventtap.keyStrokes(s) end
 
 -- Subtitle overlay. Built when the demo starts, pinned to the bottom of the
 -- screen that actually holds the game window (handles multi-monitor setups).
@@ -166,15 +172,15 @@ end)
 -- Captions are sparse and complete sentences, with the button-clicking done
 -- silently in between, so each spoken line has time to finish before the next.
 
--- Level 5 — inhibition: B floods the bed but keeps its distance from A.
-at(2.6, function() key("5"); caption("Turing's morphogenesis, as a puzzle") end)
-at(1.6, function() click(B.up) end)        -- click B's rule (silent)
-at(0.5, function() click(B.down) end)
-at(0.5, function() click(B.left) end)
-at(0.5, function() click(B.right) end)
-at(0.6, function() click(B.avoid) end)
-at(1.0, function() click(B.sunrise); caption("Plant B spreads everywhere, but avoids crowding A") end)
-at(6.8, function() caption("A Turing spot: order grown from one simple rule") end)
+-- Level 5 — inhibition, solved by *talking to the flowers* (Gemini): type a plain
+-- wish, Gemini turns it into the rule, then Sunrise grows it.
+at(2.6, function() key("5"); caption("Turing's morphogenesis — just tell the flowers") end)
+at(1.4, function() click(B.nlField) end)                    -- focus the input
+at(0.7, function() typeText("flood the bed with B but keep a gap around A") end)
+at(2.4, function() click(B.ask); caption("“flood the bed with B but keep a gap around A”") end)
+at(1.0, function() caption("Gemini turns your words into a growth rule…") end)
+at(4.0, function() click(B.sunrise); caption("Sunrise — watch B avoid crowding A") end)
+at(6.8, function() caption("A Turing spot: order grown from one sentence") end)
 
 -- Level 9 — clustering: fill the outlined block without spilling.
 at(4.0, function() key("9"); caption("A deeper rule: clustering") end)

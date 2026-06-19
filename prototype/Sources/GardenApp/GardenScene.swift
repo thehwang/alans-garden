@@ -82,6 +82,10 @@ final class GardenScene: SKScene {
     private var shownPositions = Set<Position>()
     private var isAnimating = false
 
+    // "Talk to your flowers" (Gemini) natural-language rule input.
+    private var nlField: NSTextField?
+    private var nlBusy = false
+
     private var cell: CGFloat = 60
     private var boardOrigin = CGPoint.zero
 
@@ -130,6 +134,100 @@ final class GardenScene: SKScene {
         addChild(controlLayer)
         buildChrome()
         loadLevel(0)
+        installNLInput(in: view)
+    }
+
+    // MARK: "Talk to your flowers" — Gemini natural-language input
+
+    /// A native text field overlaid above the board. Type a wish, press Return,
+    /// and Gemini translates it into growth rules. Optional: with no GEMINI_API_KEY
+    /// the field simply reports that it's unavailable and the game plays as usual.
+    private func installNLInput(in view: SKView) {
+        // Accent "feature" bar so the Google-AI input clearly stands out. Drawn in
+        // the scene behind the native field/button (AppKit subviews render on top).
+        let barRect = CGRect(x: boardArea.minX - 4, y: boardArea.maxY + 20, width: boardArea.width + 8, height: 30)
+        let glow = roundedRect(barRect.insetBy(dx: -2, dy: -2), radius: 14,
+                               fill: C.accent.withAlphaComponent(0.10), stroke: .clear, lineWidth: 0)
+        glow.zPosition = 5
+        addChild(glow)
+        let card = roundedRect(barRect, radius: 12,
+                               fill: C.accent.withAlphaComponent(0.16),
+                               stroke: C.accent.withAlphaComponent(0.85), lineWidth: 1.5)
+        card.zPosition = 5
+        addChild(card)
+
+        let heading = label("✨ Talk to your flowers", size: 13, color: C.accent, weight: .bold)
+        heading.horizontalAlignmentMode = .left
+        heading.verticalAlignmentMode = .center
+        heading.position = CGPoint(x: barRect.minX + 14, y: barRect.midY)
+        heading.zPosition = 6
+        addChild(heading)
+
+        // Native input + Ask button.
+        let field = NSTextField(frame: NSRect(x: barRect.minX + 168, y: barRect.midY - 12,
+                                              width: barRect.width - 168 - 112, height: 24))
+        field.placeholderString = "describe what you want — e.g. “flood the bed but keep a gap around A”"
+        field.font = .systemFont(ofSize: 13)
+        field.bezelStyle = .roundedBezel
+        field.focusRingType = .none
+        field.target = self
+        field.action = #selector(nlSubmit)
+        view.addSubview(field)
+        nlField = field
+
+        let btn = NSButton(frame: NSRect(x: barRect.maxX - 102, y: barRect.midY - 13, width: 92, height: 26))
+        btn.title = "Ask Gemini"
+        btn.bezelStyle = .rounded
+        btn.bezelColor = C.accent
+        btn.contentTintColor = .white
+        btn.target = self
+        btn.action = #selector(nlSubmit)
+        view.addSubview(btn)
+    }
+
+    /// Static seed colors present on the board that the player can't set rules for
+    /// (e.g. a fixed repellent) but Gemini may reference in avoid/need.
+    private var staticSeedColors: [Character] {
+        let settable = Set(controllableColors)
+        let present = Set(level.initial.flowerPositions().compactMap { level.initial[$0].flowerColor })
+        return present.subtracting(settable).sorted()
+    }
+
+    @objc private func nlSubmit() {
+        guard let field = nlField else { return }
+        let prompt = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !prompt.isEmpty, !isAnimating, !nlBusy else { return }
+        // Hand keyboard focus back so Space/Sunrise and 1–9 shortcuts keep working.
+        field.window?.makeFirstResponder(view)
+
+        let settable = controllableColors
+        let seeds = staticSeedColors
+        nlBusy = true
+        setStatus("Asking Gemini to talk to your flowers…", color: C.accent)
+
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let s = try await GeminiClient.suggestRules(prompt: prompt, settable: settable, seeds: seeds)
+                await MainActor.run {
+                    self.nlBusy = false
+                    guard !s.rules.isEmpty else {
+                        self.setStatus("Gemini didn't set a rule — try naming a plant and what it should do.", color: C.spill)
+                        return
+                    }
+                    self.rules = s.rules
+                    self.buildControls()
+                    self.updatePreview()
+                    self.setStatus("Gemini: \(s.explanation)  Press ☀ Sunrise.", color: C.text)
+                }
+            } catch {
+                await MainActor.run {
+                    self.nlBusy = false
+                    let msg = (error as? LocalizedError)?.errorDescription ?? "Couldn't reach Gemini."
+                    self.setStatus(msg, color: C.spill)
+                }
+            }
+        }
     }
 
     // MARK: Chrome (background, panels, header, daylight)
@@ -211,12 +309,12 @@ final class GardenScene: SKScene {
         // Header.
         titleLabel = label("Alan's Garden", size: 26, color: C.text, weight: .bold)
         titleLabel.horizontalAlignmentMode = .left
-        titleLabel.position = CGPoint(x: 44, y: size.height - 42)
+        titleLabel.position = CGPoint(x: 44, y: size.height - 34)
         addChild(titleLabel)
 
         subtitleLabel = label("", size: 13, color: C.dim, weight: .medium)
         subtitleLabel.horizontalAlignmentMode = .left
-        subtitleLabel.position = CGPoint(x: 44, y: size.height - 64)
+        subtitleLabel.position = CGPoint(x: 44, y: size.height - 56)
         addChild(subtitleLabel)
 
         // Daylight track + travelling sun.
