@@ -85,7 +85,6 @@ Rule syntax: `A=NSEW` (all directions) · `A=E` (east only) · `B=NSEW~A` (avoid
 ## Project layout
 
 ```
-DESIGN.md                  game design document
 prototype/
   Sources/GardenCore/      reusable engine (grid, deterministic CA, levels, ASCII renderer)
   Sources/garden/          command-line frame-by-frame demo
@@ -95,7 +94,7 @@ prototype/
   tools/demo.lua           Hammerspoon driver that auto-plays the demo with subtitles
 ```
 
-See [`prototype/README.md`](prototype/README.md) for developer notes (in Chinese).
+See [`prototype/README.md`](prototype/README.md) for developer notes.
 
 ## Demo
 
