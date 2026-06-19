@@ -1,0 +1,10 @@
+.DS_Store
+.build/
+.swiftpm/
+*.xcodeproj
+dist/
+
+# Recordings / large media (host on dev.to / YouTube, not in git)
+*.mov
+*.mp4
+*.m4v
